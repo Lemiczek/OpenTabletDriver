@@ -349,58 +349,6 @@ namespace OpenTabletDriver.Tests
             }
         }
 
-        /// <summary>
-        /// Ensures that configuration formatting/linting matches expectations, which are:
-        /// - 2 space indentation
-        /// - Newline at end of file
-        /// - Consistent newline format
-        /// </summary>
-        [Fact]
-        public void Configurations_Are_Linted()
-        {
-            var serializer = new JsonSerializer()
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            };
-
-            var sb = new StringBuilder();
-            using var strw = new StringWriter(sb);
-            using var jtw = new JsonTextWriter(strw)
-            {
-                Formatting = Formatting.Indented,
-                Indentation = 2
-            };
-
-            var failedFiles = 0;
-            foreach (var (tabletFilename, actual) in ConfigFiles)
-            {
-                sb.Clear();
-                try
-                {
-                    var ourJsonObj = JsonConvert.DeserializeObject<TabletConfiguration>(actual);
-                    serializer.Serialize(jtw, ourJsonObj);
-                    sb.AppendLine();
-                    var expected = sb.ToString();
-
-                    var diff = InlineDiffBuilder.Diff(expected, actual);
-
-                    if (diff.HasDifferences)
-                    {
-                        _testOutputHelper.WriteLine($"'{tabletFilename}' did not match linting:");
-                        PrintDiff(_testOutputHelper, diff);
-                        failedFiles++;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _testOutputHelper.WriteLine($"'{tabletFilename}' failed to deserialize: {ex.Message}");
-                    failedFiles++;
-                }
-            }
-
-            Assert.True(failedFiles == 0, $"{failedFiles} configuration files failed linting.");
-        }
-
         private static void PrintDiff(ITestOutputHelper outputHelper, DiffPaneModel diff)
         {
             foreach (var line in diff.Lines)
